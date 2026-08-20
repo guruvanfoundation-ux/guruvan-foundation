@@ -1,0 +1,81 @@
+# Render deployment — one web service serving both the API and the built site.
+#
+# Express serves client/dist (copied to server/public at build time), so the
+# site and the API share an origin: no CORS, and the Razorpay webhook at
+# https://<domain>/api/donations/webhook resolves.
+#
+# Secrets are NOT in this file. Anything marked `sync: false` must be pasted
+# into the Render dashboard once (Environment → Add Environment Variable),
+# copying the values from your local server/.env.
+
+services:
+  - type: web
+    name: guruvan-foundation
+    runtime: node
+    region: singapore          # closest Render region to India
+    plan: starter              # the free plan sleeps after 15 min — donors would hit a ~50s cold start
+    healthCheckPath: /api/health
+
+    # --include=dev is required: vite and tailwind are devDependencies, and
+    # Render sets NODE_ENV=production, which would otherwise skip them.
+    buildCommand: >-
+      npm ci --prefix client --include=dev &&
+      npm run build --prefix client &&
+      rm -rf server/public &&
+      cp -r client/dist server/public &&
+      npm ci --prefix server --omit=dev
+
+    startCommand: node server/server.js
+
+    # Uploaded media must outlive a deploy; without this the admin panel's
+    # photos vanish on every rebuild.
+    disk:
+      name: uploads
+      mountPath: /opt/render/project/src/server/uploads
+      sizeGB: 1
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "5000"
+      - key: NODE_ENV
+        value: production
+
+      # --- set these in the dashboard -------------------------------------
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: AUTH_DISABLED
+        sync: false          # must be false in production
+      - key: CLIENT_ORIGIN
+        sync: false          # https://guruvanfoundation.org
+      - key: PUBLIC_URL
+        sync: false          # https://guruvanfoundation.org
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: ORG_80G_NUMBER
+        sync: false
+      - key: ORG_UIN
+        sync: false
+      - key: ORG_TAX_YEARS
+        sync: false

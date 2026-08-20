@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+
+# built client, produced by the deploy build step
+server/public/
+
+# uploaded media lives on the server disk, not in the repo
+server/uploads/

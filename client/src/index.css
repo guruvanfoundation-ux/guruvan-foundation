@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-white font-body text-ink antialiased; }
+  h1, h2, h3, h4 { @apply font-display text-ink; }
+  :focus-visible { outline: 3px solid #E8912B; outline-offset: 2px; border-radius: 4px; }
+}
+
+@layer components {
+  /* Page shell — one gutter rule for every section */
+  .container-g { @apply mx-auto w-full max-w-shell px-5 sm:px-6 lg:px-8; }
+  .shell       { @apply container-g; }
+
+  .card { @apply rounded-card bg-white p-6 shadow-card ring-1 ring-forest-100; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-6 py-3
+           font-display text-[13px] font-700 uppercase tracking-[0.08em]
+           transition-colors duration-200;
+  }
+  .btn-forest, .btn-green { @apply btn bg-forest-900 text-white hover:bg-forest-700; }
+  .btn-orange  { @apply btn bg-saffron-500 text-white hover:bg-saffron-600; }
+  .btn-outline { @apply btn border-2 border-forest-900 bg-white text-forest-900 hover:bg-forest-900 hover:text-white; }
+  .btn-ghost-light { @apply btn border border-white/70 text-white hover:bg-white hover:text-forest-900; }
+
+  .section { @apply py-14 sm:py-16 lg:py-20; }
+  .section-title { @apply font-display text-2xl font-800 text-forest-900 sm:text-3xl; }
+  .icon-chip { @apply grid h-14 w-14 place-items-center rounded-full bg-forest-tint text-forest-700; }
+  .input {
+    @apply w-full rounded-lg border border-forest-line bg-white px-4 py-3 text-sm
+           outline-none transition focus:border-forest-600;
+  }
+  .eyebrow { @apply font-display text-xs font-700 uppercase tracking-[0.18em] text-forest-600; }
+
+  /* Scroll reveal — .in is added by hooks.js, .is-visible by lib/useReveal.js */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in, .reveal.is-visible { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
