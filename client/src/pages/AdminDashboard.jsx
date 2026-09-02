@@ -411,10 +411,19 @@ function VolunteerManager() {
 function ContactManager() {
   const [contacts, setContacts] = useState([])
   const [msg, setMsg] = useState(null)
+  const [busyId, setBusyId] = useState(null)
 
-  useEffect(() => {
-    adminFetch('/api/contact').then(setContacts).catch((e) => setMsg({ kind: 'error', text: e.message }))
-  }, [])
+  const load = () => adminFetch('/api/contact').then(setContacts).catch((e) => setMsg({ kind: 'error', text: e.message }))
+
+  useEffect(() => { load() }, []) // eslint-disable-line
+
+  async function remove(contact) {
+    if (!window.confirm(`Permanently delete the enquiry from ${contact.name}? This cannot be undone.`)) return
+    setBusyId(contact._id); setMsg(null)
+    try { await adminFetch(`/api/contact/${contact._id}`, { method: 'DELETE' }); await load() }
+    catch (e) { setMsg({ kind: 'error', text: e.message }) }
+    finally { setBusyId(null) }
+  }
 
   return (
     <Panel title="Contact enquiries" hint="Messages submitted through the Contact Us form.">
@@ -427,7 +436,7 @@ function ContactManager() {
         <div className="mt-5 overflow-x-auto rounded-card ring-1 ring-forest-line">
           <table className="w-full text-left text-sm">
             <thead className="bg-forest-wash text-[11px] uppercase tracking-wide text-forest-800">
-              <tr><th className="px-4 py-3">From</th><th className="px-4 py-3">Subject</th><th className="px-4 py-3">Message</th><th className="px-4 py-3">Received</th></tr>
+              <tr><th className="px-4 py-3">From</th><th className="px-4 py-3">Subject</th><th className="px-4 py-3">Message</th><th className="px-4 py-3">Received</th><th className="px-4 py-3 text-right">Actions</th></tr>
             </thead>
             <tbody>
               {contacts.map((c) => (
@@ -436,6 +445,15 @@ function ContactManager() {
                   <td className="px-4 py-3">{c.subject || '—'}</td>
                   <td className="min-w-[240px] whitespace-pre-wrap px-4 py-3 text-ink-soft">{c.message}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-soft">{new Date(c.createdAt).toLocaleDateString('en-IN')}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => remove(c)}
+                      disabled={busyId === c._id}
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-700 text-red-700 ring-1 ring-red-200 transition hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

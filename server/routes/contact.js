@@ -1,6 +1,6 @@
 import { Router } from "express";
 import Contact from "../models/Contact.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { requireAdmin, requireSuperAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -20,6 +20,13 @@ router.post("/", async (req, res) => {
 router.get("/", requireAdmin, async (_req, res) => {
   const contacts = await Contact.find().sort("-createdAt");
   res.json(contacts);
+});
+
+// Super-admin: permanently remove an enquiry after explicit UI confirmation.
+router.delete("/:id", requireSuperAdmin, async (req, res) => {
+  const contact = await Contact.findByIdAndDelete(req.params.id);
+  if (!contact) return res.status(404).json({ error: "Contact enquiry not found." });
+  res.json({ success: true });
 });
 
 export default router;
