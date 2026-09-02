@@ -1,5 +1,6 @@
 import { Router } from "express";
 import Contact from "../models/Contact.js";
+import { requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -13,6 +14,12 @@ router.post("/", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Could not send message. Try again." });
   }
+});
+
+// Contact details and message contents are private; only admins can view them.
+router.get("/", requireAdmin, async (_req, res) => {
+  const contacts = await Contact.find().sort("-createdAt");
+  res.json(contacts);
 });
 
 export default router;
