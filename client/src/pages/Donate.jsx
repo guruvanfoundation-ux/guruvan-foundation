@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { PageHero } from './PagePlaceholder.jsx'
 import { ShieldCheckIcon, ReceiptIcon, PeopleIcon, HandPlantIcon } from '../components/Icons.jsx'
+import { apiUrl } from '../lib/api.js'
 
-const presets = [500, 1000, 2000, 5000]
+const presets = [250, 500, 1000, 2500]
 
 const impact = [
-  { amount: 500, text: 'Saplings for a small plantation patch, with aftercare through the first season.' },
+  { amount: 250, text: 'Plants and nurtures one tree through Project Virasat Vana.' },
   { amount: 1000, text: 'A learning kit — books, bag and stationery — for one student.' },
   { amount: 5000, text: 'Supports a community health camp serving families for a day.' },
 ]
@@ -52,11 +53,12 @@ function panError(value) {
 }
 
 export default function Donate() {
+  const requestedAmount = Number(new URLSearchParams(window.location.search).get('amount'))
   const [mode, setMode] = useState('one-time')
-  const [amount, setAmount] = useState(1000)
+  const [amount, setAmount] = useState(requestedAmount > 0 ? requestedAmount : 250)
   const [custom, setCustom] = useState('')
   const [donor, setDonor] = useState({ name: '', email: '', phone: '', pan: '', aadhar: '', address: '' })
-  const [options, setOptions] = useState({ taxExemption: false, isGift: false, showName: true })
+  const [options, setOptions] = useState({ taxExemption: false, isGift: false, showName: false })
   const [status, setStatus] = useState(null)
   const [touched, setTouched] = useState({})
   const finalAmount = custom ? Number(custom) : amount
@@ -91,7 +93,7 @@ export default function Donate() {
     setStatus({ type: 'info', msg: 'Preparing secure payment…' })
     try {
       // 1) Create order on our server
-      const res = await fetch('/api/donations/order', {
+      const res = await fetch(apiUrl('/api/donations/order'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: finalAmount, mode, donor: cleanDonor, options }),
@@ -123,7 +125,7 @@ export default function Donate() {
         },
         handler: async (resp) => {
           // 3) Verify signature server-side, then receipt is emailed automatically
-          const vres = await fetch('/api/donations/verify', {
+          const vres = await fetch(apiUrl('/api/donations/verify'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(resp),
@@ -133,7 +135,7 @@ export default function Donate() {
             setStatus({
               type: 'success',
               msg: `Thank you! Receipt ${v.receiptNo} has been emailed to you.`,
-              certUrl: `/api/donations/${v.receiptNo}/certificate`,
+              certUrl: apiUrl(`/api/donations/${v.receiptNo}/certificate`),
             })
           } else {
             setStatus({ type: 'error', msg: 'Payment verification failed. If money was deducted, it will be auto-refunded.' })
@@ -255,13 +257,6 @@ export default function Donate() {
             </div>
           </label>
 
-          <label className="flex items-start gap-3">
-            <input type="checkbox" checked={options.showName} onChange={e => setOptions({ ...options, showName: e.target.checked })} />
-            <div>
-              <div className="font-700">Show my name on public donor wall</div>
-              <div className="text-sm text-ink/70">Your contribution will be publicly acknowledged</div>
-            </div>
-          </label>
         </div>
 
         <button onClick={payNow}
@@ -302,9 +297,6 @@ export default function Donate() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs text-ink/50">
-            Costs to be confirmed with the foundation before launch.
-          </p>
         </div>
 
         {/* Trust strip */}

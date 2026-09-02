@@ -11,8 +11,10 @@ import GetInvolved from './pages/GetInvolved.jsx'
 import Donate from './pages/Donate.jsx'
 import Contact from './pages/Contact.jsx'
 import PagePlaceholder from './pages/PagePlaceholder.jsx'
+import { PrivacyPolicy, TermsOfUse, RefundPolicy } from './pages/Legal.jsx'
 import AdminLogin from './pages/AdminLogin.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'
+import Volunteers from './pages/Volunteers.jsx'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -35,11 +37,12 @@ export default function App() {
         <Route path="/campaigns" element={<Campaigns />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/get-involved" element={<GetInvolved />} />
+        <Route path="/volunteers" element={<Volunteers />} />
         <Route path="/donate" element={<Donate />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/privacy" element={<PagePlaceholder title="Privacy Policy" />} />
-        <Route path="/terms" element={<PagePlaceholder title="Terms of Use" />} />
-        <Route path="/refund-policy" element={<PagePlaceholder title="Refund Policy" />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfUse />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<PagePlaceholder title="Page Not Found" />} />

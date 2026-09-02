@@ -15,6 +15,7 @@ const columns = [
     items: [
       ['Donate', '/donate'],
       ['Volunteer', '/get-involved'],
+      ['Volunteer directory', '/volunteers'],
       ['Partner with us', '/get-involved'],
       ['Resources', '/resources']
     ]

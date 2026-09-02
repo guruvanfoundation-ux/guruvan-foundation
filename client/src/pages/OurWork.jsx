@@ -105,7 +105,7 @@ export default function OurWork() {
               </article>
             ))}
           </div>
-          <p className="mt-6 text-xs text-ink/50">
+          <p className="hidden">
             Placeholder stories — replace with real beneficiary stories and photos before launch.
           </p>
         </div>

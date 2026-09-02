@@ -4,8 +4,8 @@ import { LeafTreeIcon, CapIcon, ShieldPlusIcon, HandsHeartIcon } from './Icons.j
 /** The foundation's impact figures — the single source for every page that shows them. */
 export const STATS = [
   { Icon: LeafTreeIcon,   value: 75, suffix: '', label: 'Trees Planted' },
-  { Icon: CapIcon,        value: 1000, suffix: '', label: 'Students Educated' },
-  { Icon: ShieldPlusIcon, value: 10, suffix: '', label: 'Health Camps' },
+  { Icon: CapIcon,        value: 0, suffix: '', label: 'Students Educated' },
+  { Icon: ShieldPlusIcon, value: 0, suffix: '', label: 'Health Camps' },
   { Icon: HandsHeartIcon, value: 10, suffix: '', label: 'Volunteers' }
 ]
 

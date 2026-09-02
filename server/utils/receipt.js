@@ -1,5 +1,5 @@
 import PDFDocument from 'pdfkit'
-import nodemailer from 'nodemailer'
+import { getTransport, fromAddress } from './mailer.js'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -259,12 +259,13 @@ const esc = (v) =>
  * never sends a duplicate.
  */
 export async function emailDonorDocuments(donation, { baseUrl = '' } = {}) {
-  // Without mail credentials nodemailer falls back to localhost:587 and throws
-  // ECONNREFUSED. The donation is already saved, so skip the mail and say so.
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  // The donation is already saved; if no transport is configured, skip the
+  // mail and say so rather than throwing.
+  const transport = getTransport()
+  if (transport.kind === 'none') {
     console.warn(
-      `Receipt ${donation.receiptNo} not emailed: SMTP is not configured ` +
-      `(set SMTP_HOST, SMTP_USER and SMTP_PASS in server/.env).`
+      `Receipt ${donation.receiptNo} not emailed: no mail transport configured ` +
+      `(set BREVO_API_KEY and MAIL_FROM, or SMTP_HOST/SMTP_USER/SMTP_PASS).`
     )
     return
   }
@@ -287,14 +288,6 @@ export async function emailDonorDocuments(donation, { baseUrl = '' } = {}) {
     process.env.ORG_80G_NUMBER && process.env.ORG_80G_NUMBER !== 'PENDING_80G_APPROVAL'
       ? `Your donation is eligible for deduction under Section 80G (Approval No. ${process.env.ORG_80G_NUMBER}). Keep the attached receipt for your records.`
       : '80G approval is currently under process. The attached receipt formally acknowledges your contribution, and we will write to you once approval comes through.'
-
-  const port = Number(process.env.SMTP_PORT || 465)
-  const transport = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port,
-    secure: port === 465, // 465 is implicit TLS; 587 upgrades with STARTTLS
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  })
 
   // Plain-text alternative — some donors read mail in clients that show only this
   const text = [
@@ -325,11 +318,11 @@ export async function emailDonorDocuments(donation, { baseUrl = '' } = {}) {
     site,
   ].join('\n')
 
-  // The logo travels with the message; clients that block remote images still show it.
-  const hasLogo = fs.existsSync(LOGO)
-  const logoTag = hasLogo
-    ? '<img src="cid:guruvanlogo" width="210" alt="Guruvan Foundation" style="display:block;margin:0 auto;width:210px;max-width:70%;height:auto;border:0">'
-    : '<div style="font-size:22px;font-weight:bold;color:#FFFFFF;letter-spacing:1px">GURUVAN FOUNDATION</div>'
+  // Over SMTP the logo travels with the message as an inline attachment, which
+  // survives image blocking. Over the API we point at the copy hosted on the site.
+  const inlineLogo = transport.kind === 'smtp' && fs.existsSync(LOGO)
+  const logoUrl = inlineLogo ? 'cid:guruvanlogo' : `${site}/images/logo-white.png`
+  const logoTag = `<img src="${logoUrl}" width="210" alt="Guruvan Foundation" style="display:block;margin:0 auto;width:210px;max-width:70%;height:auto;border:0">`
 
   // Table-based layout with inline styles — the only thing mail clients render reliably
   const html = `
@@ -413,14 +406,14 @@ export async function emailDonorDocuments(donation, { baseUrl = '' } = {}) {
     </td></tr>
   </table>`
 
-  await transport.sendMail({
-    from: process.env.MAIL_FROM || `"Guruvan Foundation" <${process.env.SMTP_USER}>`,
+  await transport.send({
+    from: fromAddress(),
     to: donation.donor.email,
     subject: `Thank you, ${firstName} — your receipt and certificate (${donation.receiptNo})`,
     text,
     html,
     attachments: [
-      ...(hasLogo
+      ...(inlineLogo
         ? [{ filename: 'guruvan-logo.png', path: LOGO, cid: 'guruvanlogo', contentDisposition: 'inline' }]
         : []),
       { filename: `${donation.receiptNo}-receipt.pdf`, content: receiptPdf },

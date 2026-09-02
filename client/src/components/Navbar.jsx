@@ -43,9 +43,11 @@ export default function Navbar() {
         <div className="shell flex h-[76px] items-center justify-between gap-4 lg:h-[92px]">
           {/* The original logo artwork carries the name, so only the strapline is set in type */}
           <Link to="/" className="flex shrink-0 flex-col items-center gap-1" aria-label="Guruvan Foundation — home">
-            <img src="/images/logo.png" alt="Guruvan Foundation" className="h-9 w-auto sm:h-11 lg:h-[54px]" />
-            <span className="ml-4 whitespace-nowrap text-[5px] font-semibold uppercase tracking-[0.12em] text-forest-700 sm:text-[6px] sm:tracking-[0.15em] lg:text-[7px] lg:tracking-[0.18em]">
-              Educate | Plant | Empower
+            <img src="/images/logo-full.png" alt="Guruvan Foundation" className="h-10 w-auto sm:h-12 lg:h-[62px]" />
+            <span className="hidden">
+              <span className="text-[#15509a]">Educate</span> <span className="text-black">|</span>{' '}
+              <span className="text-[#3c6b23]">Plant</span> <span className="text-black">|</span>{' '}
+              <span className="text-[#c77a25]">Empower</span>
             </span>
           </Link>
 

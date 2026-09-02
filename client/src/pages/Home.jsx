@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useReveal } from '../hooks.js'
 import StatsBand from '../components/StatsBand.jsx'
 import { HandPlantIcon, CapIcon, HeartPulseIcon, ArrowRight } from '../components/Icons.jsx'
+import { apiUrl, fetchMedia } from '../lib/api.js'
 
 const HERO_PHOTO = '/images/hero-sapling.png'
 const HERO_VIDEO = '/videos/homepagevid.mp4'
@@ -110,6 +111,11 @@ function HeroVideo({ frame = HERO_FRAME }) {
 
 export default function Home() {
   const [heroFrame, setHeroFrame] = useState(HERO_FRAME)
+  const [recentMedia, setRecentMedia] = useState([])
+
+  useEffect(() => {
+    fetchMedia().then((items) => setRecentMedia(items.slice(0, 6))).catch(() => setRecentMedia([]))
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -233,6 +239,21 @@ export default function Home() {
       </Section>
 
       {/* DONATE CTA — the footer's own top margin supplies the gap below it */}
+      {recentMedia.length > 0 && (
+        <Section className="shell pb-12 lg:pb-16">
+          <h2 className="section-title text-center">Latest From Our Community</h2>
+          <p className="mt-3 text-center text-[15px] text-ink-soft">Recently uploaded photos and media from Guruvan Foundation activities.</p>
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {recentMedia.map((media) => (
+              <figure key={media._id} className="overflow-hidden rounded-lg bg-cream">
+                <img src={apiUrl(media.url)} alt={media.caption || 'Guruvan Foundation activity'} loading="lazy" className="h-36 w-full object-cover transition duration-300 hover:scale-105" />
+                {media.caption && <figcaption className="truncate px-3 py-2 text-xs text-ink-soft">{media.caption}</figcaption>}
+              </figure>
+            ))}
+          </div>
+        </Section>
+      )}
+
       <Section className="shell">
         <div className="relative overflow-hidden rounded-card bg-forest-900 px-8 py-12 lg:px-12">
           <img

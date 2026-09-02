@@ -356,6 +356,44 @@ function VolunteerManager() {
   )
 }
 
+function ContactManager() {
+  const [contacts, setContacts] = useState([])
+  const [msg, setMsg] = useState(null)
+
+  useEffect(() => {
+    adminFetch('/api/contact').then(setContacts).catch((e) => setMsg({ kind: 'error', text: e.message }))
+  }, [])
+
+  return (
+    <Panel title="Contact enquiries" hint="Messages submitted through the Contact Us form.">
+      <Alert kind={msg?.kind}>{msg?.text}</Alert>
+      {contacts.length === 0 ? (
+        <div className="mt-5 rounded-card border border-dashed border-forest-line bg-forest-wash px-6 py-12 text-center text-sm text-ink-soft">
+          No contact enquiries yet.
+        </div>
+      ) : (
+        <div className="mt-5 overflow-x-auto rounded-card ring-1 ring-forest-line">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-forest-wash text-[11px] uppercase tracking-wide text-forest-800">
+              <tr><th className="px-4 py-3">From</th><th className="px-4 py-3">Subject</th><th className="px-4 py-3">Message</th><th className="px-4 py-3">Received</th></tr>
+            </thead>
+            <tbody>
+              {contacts.map((c) => (
+                <tr key={c._id} className="border-t border-forest-line align-top">
+                  <td className="px-4 py-3"><span className="block font-600 text-forest-900">{c.name}</span><a className="text-xs text-forest-600 hover:underline" href={`mailto:${c.email}`}>{c.email}</a></td>
+                  <td className="px-4 py-3">{c.subject || '—'}</td>
+                  <td className="min-w-[240px] whitespace-pre-wrap px-4 py-3 text-ink-soft">{c.message}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-soft">{new Date(c.createdAt).toLocaleDateString('en-IN')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  )
+}
+
 export default function AdminDashboard() {
   // Tab lives in the hash so a refresh (or a bookmark) keeps you where you were
   const [tab, setTab] = useState(() =>
@@ -373,6 +411,7 @@ export default function AdminDashboard() {
   const tabs = [
     ['photos', 'Photos', ImageIcon],
     ['volunteers', 'Volunteers', UsersIcon],
+    ['contacts', 'Enquiries', FileIcon],
   ]
 
   return (
@@ -423,7 +462,7 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="mt-6">
-          {tab === 'photos' ? <PhotoManager /> : <VolunteerManager />}
+          {tab === 'photos' ? <PhotoManager /> : tab === 'volunteers' ? <VolunteerManager /> : <ContactManager />}
         </div>
       </main>
     </div>

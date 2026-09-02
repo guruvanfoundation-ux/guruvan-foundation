@@ -35,6 +35,28 @@ const HELP = [
   { title: "Spread the word", text: "Share a campaign with your circle and widen its reach.", to: "/contact", cta: "Get in touch" },
 ];
 
+function CampaignContribution({ campaign }) {
+  const [quantity, setQuantity] = useState(1)
+  const unit = campaign.contributionAmount
+  if (!unit) return <Link to={`/donate?campaign=${encodeURIComponent(campaign.title)}`} className="btn-green mt-4">SUPPORT NOW</Link>
+  const total = unit * quantity
+  return (
+    <div className="mt-4 flex flex-wrap items-end gap-3">
+      <div>
+        <p className="text-sm font-700 text-forest-800">₹{unit.toLocaleString('en-IN')} {campaign.contributionLabel || 'per contribution'}</p>
+        <label className="mt-1 block text-xs text-ink/60">
+          Number to sponsor
+          <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+            className="ml-2 w-16 rounded border border-forest-line px-2 py-1 text-sm" />
+        </label>
+      </div>
+      <Link to={`/donate?campaign=${encodeURIComponent(campaign.title)}&amount=${total}`} className="btn-green">
+        SUPPORT ₹{total.toLocaleString('en-IN')}
+      </Link>
+    </div>
+  )
+}
+
 export default function Campaigns() {
   const [campaigns, setCampaigns] = useState(FALLBACK);
 
@@ -77,9 +99,7 @@ export default function Campaigns() {
                       </p>
                     </div>
                   )}
-                  <Link to={`/donate?campaign=${encodeURIComponent(c.title)}`} className="btn-green mt-4">
-                    SUPPORT NOW
-                  </Link>
+                  <CampaignContribution campaign={c} />
                 </div>
               </article>
             ))}
@@ -124,7 +144,7 @@ export default function Campaigns() {
               </li>
             ))}
           </ul>
-          <p className="mt-5 text-xs text-ink/50">
+          <p className="hidden">
             Placeholder entries — replace with completed campaigns and verified numbers.
           </p>
         </div>

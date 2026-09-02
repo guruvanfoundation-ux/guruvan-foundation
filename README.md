@@ -23,8 +23,8 @@ npm run dev                 # http://localhost:5173 (proxies /api to :5000)
 ## What's built
 
 **Pages** (all responsive, matching the mockups): Home, About Us, Our Work, Campaigns,
-Resources, Get Involved, Donate, Contact — plus routed placeholders for Privacy, Terms
-and Refund Policy, which Razorpay requires to be live before account activation.
+Resources, Get Involved, Donate, Contact, Privacy Policy, Terms of Use and Refund
+Policy. The legal pages are linked in the footer and are ready for Razorpay review.
 
 **Donations.** One Razorpay integration covers every method the client asked for:
 UPI (GPay/PhonePe/Paytm), credit and debit cards, netbanking, wallets, and EMI.
@@ -32,7 +32,7 @@ International cards can be enabled from the Razorpay dashboard once approved.
 
 Flow: `POST /api/donations/order` creates the order and a pending `Donation` record →
 Razorpay Checkout opens → `POST /api/donations/verify` checks the HMAC signature and
-marks it paid → a PDF receipt is generated with PDFKit and emailed via Nodemailer.
+marks it paid → a PDF receipt is generated with PDFKit and emailed through Brevo.
 `POST /api/donations/webhook` is the server-to-server safety net for `payment.captured`
 and `payment.failed`, so a donation is never lost if the donor closes the tab.
 
@@ -66,6 +66,10 @@ were extracted from the client's own vector artwork as transparent PNGs.
    50+ camps / 100+ volunteers are placeholders — publishing unverified figures on a
    donation page is a real credibility risk for a new foundation.
 4. Set `CLIENT_ORIGIN` in the server `.env` to the production domain before deploying.
+5. **Brevo email.** Verify a sender address in Brevo, create an API key, then set
+   `BREVO_API_KEY` and `MAIL_FROM` in Render. For example:
+   `MAIL_FROM="Guruvan Foundation <your-verified-address@example.com>"`.
+   Brevo sends over HTTPS and does not require an MX record.
 
 ## Not built yet
 
