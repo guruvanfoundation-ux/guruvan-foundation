@@ -1,6 +1,7 @@
+import { apiUrl } from './api.js'
+
 const TOKEN_KEY = 'guruvan_admin_token'
 const ROLE_KEY = 'guruvan_admin_role'
-const BASE = import.meta.env.VITE_API_URL || ''
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const getRole = () => localStorage.getItem(ROLE_KEY)
@@ -12,7 +13,7 @@ export function logout() {
 }
 
 export async function login(email, password) {
-  const res = await fetch(`${BASE}/api/auth/login`, {
+  const res = await fetch(apiUrl('/api/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
@@ -29,7 +30,7 @@ export async function login(email, password) {
  * the bearer token, so fetch it and hand the blob to the browser instead.
  */
 export async function adminDownload(path, filename) {
-  const res = await fetch(`${BASE}${path}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+  const res = await fetch(apiUrl(path), { headers: { Authorization: `Bearer ${getToken()}` } })
   if (res.status === 401) {
     logout()
     throw new Error('Session expired. Please log in again.')
@@ -50,7 +51,7 @@ export async function adminDownload(path, filename) {
 
 /** Fetch wrapper that attaches the admin bearer token. */
 export async function adminFetch(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(apiUrl(path), {
     ...options,
     headers: {
       ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),

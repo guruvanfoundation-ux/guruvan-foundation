@@ -15,8 +15,9 @@ const volunteerSchema = new mongoose.Schema(
     bloodGroup: { type: String, trim: true },
     emergencyContact: { type: String, trim: true },
     volunteerId: { type: String, unique: true, sparse: true },
-    status: { type: String, enum: ["new", "approved"], default: "new" },
+    status: { type: String, enum: ["new", "approved", "rejected"], default: "new" },
     approvedAt: { type: Date },
+    rejectedAt: { type: Date },
   },
   { timestamps: true }
 );

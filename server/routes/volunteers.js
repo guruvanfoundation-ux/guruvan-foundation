@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import Volunteer from '../models/Volunteer.js'
-import { requireAdmin } from '../middleware/auth.js'
+import { requireAdmin, requireSuperAdmin } from '../middleware/auth.js'
 import {
   buildVolunteerIdCard,
   buildVolunteerCertificate,
@@ -29,6 +29,14 @@ router.post('/', async (req, res) => {
   }
 })
 
+// Public directory: deliberately exclude contact details and private application notes.
+router.get('/directory', async (_req, res) => {
+  const volunteers = await Volunteer.find({ status: 'approved' })
+    .sort('name')
+    .select('name city interest volunteerId approvedAt -_id')
+  res.json(volunteers)
+})
+
 // Admin: list volunteers
 router.get('/', requireAdmin, async (_req, res) => {
   const volunteers = await Volunteer.find().sort('-createdAt')
@@ -42,16 +50,34 @@ router.post('/:id/approve', requireAdmin, async (req, res) => {
   if (volunteer.status !== 'approved') {
     volunteer.status = 'approved'
     volunteer.approvedAt = new Date()
+    volunteer.rejectedAt = undefined
     if (!volunteer.volunteerId) volunteer.volunteerId = await nextVolunteerId()
     await volunteer.save()
   }
   res.json({ success: true, volunteerId: volunteer.volunteerId })
 })
 
+// Admin: reject an application while retaining its record for audit/history.
+router.post('/:id/reject', requireAdmin, async (req, res) => {
+  const volunteer = await Volunteer.findById(req.params.id)
+  if (!volunteer) return res.status(404).json({ error: 'Volunteer not found.' })
+  volunteer.status = 'rejected'
+  volunteer.rejectedAt = new Date()
+  await volunteer.save()
+  res.json({ success: true })
+})
+
+// Super-admin: permanently erase an application after explicit UI confirmation.
+router.delete('/:id', requireSuperAdmin, async (req, res) => {
+  const volunteer = await Volunteer.findByIdAndDelete(req.params.id)
+  if (!volunteer) return res.status(404).json({ error: 'Volunteer not found.' })
+  res.json({ success: true })
+})
+
 // Admin: download the auto-generated ID card (PDF)
 router.get('/:id/id-card', requireAdmin, async (req, res) => {
   const volunteer = await Volunteer.findById(req.params.id)
-  if (!volunteer?.volunteerId)
+  if (volunteer?.status !== 'approved' || !volunteer.volunteerId)
     return res.status(400).json({ error: 'Approve the volunteer first to generate an ID.' })
   const pdf = await buildVolunteerIdCard(volunteer, { baseUrl: baseUrl(req) })
   res.setHeader('Content-Type', 'application/pdf')
@@ -62,7 +88,7 @@ router.get('/:id/id-card', requireAdmin, async (req, res) => {
 // Admin: download the participation / appreciation certificate (PDF)
 router.get('/:id/certificate', requireAdmin, async (req, res) => {
   const volunteer = await Volunteer.findById(req.params.id)
-  if (!volunteer?.volunteerId)
+  if (volunteer?.status !== 'approved' || !volunteer.volunteerId)
     return res.status(400).json({ error: 'Approve the volunteer first to generate a certificate.' })
   const { project, hours } = req.query
   const pdf = await buildVolunteerCertificate(volunteer, { baseUrl: baseUrl(req), project, hours })

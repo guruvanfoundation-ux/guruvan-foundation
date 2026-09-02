@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { adminFetch, adminDownload, logout, isLoggedIn, getRole } from '../lib/adminAuth.js'
+import { apiUrl } from '../lib/api.js'
 
 const SLOTS = [
   { id: 'hero', label: 'Homepage hero' },
@@ -12,7 +13,7 @@ const SLOTS = [
 ]
 
 /* Uploads are served by the API, which may sit on a different origin than the site */
-const mediaUrl = (url) => `${import.meta.env.VITE_API_URL || ''}${url}`
+const mediaUrl = (url) => apiUrl(url)
 
 /* Local line icons, drawn to match the public site's stroke style */
 const ico = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -258,6 +259,22 @@ function VolunteerManager() {
     finally { setBusyId(null) }
   }
 
+  async function reject(id) {
+    if (!window.confirm('Reject this volunteer application? You can approve it later if needed.')) return
+    setBusyId(id); setMsg(null)
+    try { await adminFetch(`/api/volunteers/${id}/reject`, { method: 'POST' }); load() }
+    catch (e) { setMsg({ kind: 'error', text: e.message }) }
+    finally { setBusyId(null) }
+  }
+
+  async function remove(v) {
+    if (!window.confirm(`Permanently delete ${v.name}'s application? This cannot be undone.`)) return
+    setBusyId(v._id); setMsg(null)
+    try { await adminFetch(`/api/volunteers/${v._id}`, { method: 'DELETE' }); load() }
+    catch (e) { setMsg({ kind: 'error', text: e.message }) }
+    finally { setBusyId(null) }
+  }
+
   async function download(v, kind) {
     setMsg(null)
     try {
@@ -269,16 +286,19 @@ function VolunteerManager() {
   }
 
   const approved = vols.filter((v) => v.status === 'approved').length
+  const pending = vols.filter((v) => v.status === 'new').length
+  const rejected = vols.filter((v) => v.status === 'rejected').length
 
   return (
     <Panel
       title="Volunteers"
       hint="Approve a sign-up to assign their volunteer ID and unlock their documents."
       aside={
-        <div className="flex gap-3">
-          <StatChip label="Total" value={vols.length} />
-          <StatChip label="Approved" value={approved} tone="good" />
-          <StatChip label="Pending" value={vols.length - approved} tone={vols.length - approved ? 'warn' : 'default'} />
+          <div className="flex flex-wrap gap-3">
+            <StatChip label="Total" value={vols.length} />
+            <StatChip label="Approved" value={approved} tone="good" />
+          <StatChip label="Pending" value={pending} tone={pending ? 'warn' : 'default'} />
+          {rejected > 0 && <StatChip label="Rejected" value={rejected} />}
         </div>
       }
     >
@@ -300,6 +320,7 @@ function VolunteerManager() {
                 <th className="px-4 py-3 font-700">Interest</th>
                 <th className="px-4 py-3 font-700">Status</th>
                 <th className="px-4 py-3 text-right font-700">Documents</th>
+                <th className="px-4 py-3 text-right font-700">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -319,14 +340,36 @@ function VolunteerManager() {
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-tint px-3 py-1 text-xs font-700 text-forest-700">
                         <span className="h-1.5 w-1.5 rounded-full bg-forest-600" />Approved
                       </span>
+                    ) : v.status === 'rejected' ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-700 text-red-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-red-600" />Rejected
+                        </span>
+                        <button
+                          onClick={() => approve(v._id)}
+                          disabled={busyId === v._id}
+                          className="rounded-full px-3 py-1.5 text-xs font-700 text-forest-700 ring-1 ring-forest-line transition hover:bg-forest-wash disabled:opacity-50"
+                        >
+                          Approve instead
+                        </button>
+                      </div>
                     ) : (
-                      <button
-                        onClick={() => approve(v._id)}
-                        disabled={busyId === v._id}
-                        className="rounded-full bg-forest-900 px-4 py-1.5 text-xs font-700 text-white transition hover:bg-forest-700 disabled:opacity-50"
-                      >
-                        {busyId === v._id ? 'Approving…' : 'Approve'}
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => approve(v._id)}
+                          disabled={busyId === v._id}
+                          className="rounded-full bg-forest-900 px-4 py-1.5 text-xs font-700 text-white transition hover:bg-forest-700 disabled:opacity-50"
+                        >
+                          {busyId === v._id ? 'Approving…' : 'Approve'}
+                        </button>
+                        <button
+                          onClick={() => reject(v._id)}
+                          disabled={busyId === v._id}
+                          className="rounded-full px-3 py-1.5 text-xs font-700 text-red-700 ring-1 ring-red-200 transition hover:bg-red-50 disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -345,6 +388,15 @@ function VolunteerManager() {
                     ) : (
                       <span className="block text-right text-ink-soft/60">—</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => remove(v)}
+                      disabled={busyId === v._id}
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-700 text-red-700 ring-1 ring-red-200 transition hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />Delete
+                    </button>
                   </td>
                 </tr>
               ))}
